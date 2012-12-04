@@ -1,47 +1,22 @@
 class riak {
-  define download(
-        $site="",
-        $cwd="",
-        $creates="",
-        $user="") {                                                                                         
-
-    exec { $name:                                                                                                                    
-        command => "/usr/bin/wget --content-disposition ${site}/${name}",                                                         
-        cwd => $cwd,
-        creates => "${cwd}/${creates}",                                                              
-        user => $user,                                                                                                        
-    }
-  }
-
-  download{ "downloads.basho.com/riak/1.2/1.2.1/ubuntu/precise/riak_1.2.1-1_amd64.deb":
-    creates => "riak_1.2.1-1_amd64.deb",
-    site => "http://s3.amazonaws.com",
-    cwd => "/tmp",
-    user => "vagrant"
-  }
-
-  exec { "install": 
-    command => "/usr/bin/dpkg --install /tmp/riak_1.2.1-1_amd64.deb"
-  }
-
   file {"/etc/riak/vm.args":
     content => template("riak/etc/riak/vm.args.erb"),
-    require => Exec["install"]
+    require => Package["riak"]
   }
 
   file {"/etc/riak/app.config":
     content => template("riak/etc/riak/app.config.erb"),
-    require => Exec["install"]
+    require => Package["riak"]
   }
 
   file {"/etc/riak/cert.pem":
     source => "puppet:///modules/riak/etc/riak/cert.pem",
-    require => Exec["install"]
+    require => Package["riak"]
   }
 
   file {"/etc/riak/key.pem":
     source => "puppet:///modules/riak/etc/riak/key.pem",
-    require => Exec["install"]
+    require => Package["riak"]
   }
 
   service {"riak":
@@ -53,6 +28,12 @@ class riak {
   package {"libssl0.9.8":
     ensure => present
   }
-  
-  Download["downloads.basho.com/riak/1.2/1.2.1/ubuntu/precise/riak_1.2.1-1_amd64.deb"] -> Package["libssl0.9.8"] -> Exec["install"] -> Service["riak"]
+
+  package { "riak":
+    provider => dpkg,
+    ensure => latest,
+    source => "/vagrant/riak/riak_1.2.1-1_amd64.deb"
+  }
+
+  Package["libssl0.9.8"] -> Package["riak"] -> Service["riak"]
 }

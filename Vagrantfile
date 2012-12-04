@@ -4,12 +4,14 @@ Vagrant::Config.run do |config|
   config.vm.box = "precise64"
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
   config.ssh.forward_agent = true
-  
+ 
+  storage_backend = "eleveldb"
+ 
   servers = {
-    :riak1 => {:network => "33.33.33.220", :nodename => "riak3@33.33.33.220"},
-    :riak2 => {:network => "33.33.33.221", :nodename => "riak3@33.33.33.221"},
-    :riak3 => {:network => "33.33.33.222", :nodename => "riak3@33.33.33.222"},
-    :riak4 => {:network => "33.33.33.223", :nodename => "riak4@33.33.33.223"}
+    :riak1 => {:network => "33.33.33.220"},
+    :riak2 => {:network => "33.33.33.221"},
+    :riak3 => {:network => "33.33.33.222"},
+    :riak4 => {:network => "33.33.33.223"}
   }
   
   servers.each do |name, opts|
@@ -18,7 +20,7 @@ Vagrant::Config.run do |config|
       #riak.vm.boot_mode = :gui
       riak.vm.network :hostonly, opts[:network]
 
-      riak.vm.provision :puppet, :facter => { "riak_node_name" => "riak@#{opts[:network]}" } do |puppet|
+      riak.vm.provision :puppet, :facter => { "storage_backend" => storage_backend,"riak_node_name" => "riak@#{opts[:network]}" } do |puppet|
         puppet.manifests_path = "manifests"
         puppet.manifest_file = "riakbox.pp"
         puppet.module_path = ["modules"]
